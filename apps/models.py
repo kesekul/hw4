@@ -62,12 +62,20 @@ class LanguageModel(nn.Module):
         """
         super(LanguageModel, self).__init__()
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if seq_model not in ("rnn", "lstm"):
+            raise ValueError("seq_model must be 'rnn' or 'lstm'")
+        recurrent = nn.RNN if seq_model == "rnn" else nn.LSTM
+        self.hidden_size = hidden_size
+        self.embedding = nn.Embedding(output_size, embedding_size, device=device, dtype=dtype)
+        self.sequence_model = recurrent(
+            embedding_size, hidden_size, num_layers=num_layers, device=device, dtype=dtype
+        )
+        self.linear = nn.Linear(hidden_size, output_size, device=device, dtype=dtype)
         ### END YOUR SOLUTION
 
     def forward(self, x, h=None):
         """
-        Given sequence (and the previous hidden state if given), returns probabilities of next word
+        Given a sequence and optional previous state, returns next-word logits
         (along with the last hidden state from the sequence model).
         Inputs:
         x of shape (seq_len, bs)
@@ -79,7 +87,10 @@ class LanguageModel(nn.Module):
             else h is tuple of (h0, c0), each of shape (num_layers, bs, hidden_size)
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        seq_len, batch_size = x.shape
+        output, state = self.sequence_model(self.embedding(x), h)
+        logits = self.linear(output.reshape((seq_len * batch_size, self.hidden_size)))
+        return logits, state
         ### END YOUR SOLUTION
 
 

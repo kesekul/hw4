@@ -25,7 +25,10 @@ class Dictionary(object):
         Returns the word's unique ID.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if word not in self.word2idx:
+            self.word2idx[word] = len(self.idx2word)
+            self.idx2word.append(word)
+        return self.word2idx[word]
         ### END YOUR SOLUTION
 
     def __len__(self):
@@ -33,7 +36,7 @@ class Dictionary(object):
         Returns the number of unique words in the dictionary.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return len(self.idx2word)
         ### END YOUR SOLUTION
 
 
@@ -60,7 +63,14 @@ class Corpus(object):
         ids: List of ids
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        ids = []
+        with open(path, encoding="utf-8") as stream:
+            for line_number, line in enumerate(stream):
+                if max_lines is not None and line_number >= max_lines:
+                    break
+                ids.extend(self.dictionary.add_word(word) for word in line.split())
+                ids.append(self.dictionary.add_word("<eos>"))
+        return ids
         ### END YOUR SOLUTION
 
 
@@ -81,7 +91,11 @@ def batchify(data, batch_size, device, dtype):
     Returns the data as a numpy array of shape (nbatch, batch_size).
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive")
+    rows = len(data) // batch_size
+    tokens = np.asarray(data[:rows * batch_size], dtype=dtype)
+    return tokens.reshape(batch_size, rows).T
     ### END YOUR SOLUTION
 
 
@@ -105,5 +119,12 @@ def get_batch(batches, i, bptt, device=None, dtype=None):
     target - Tensor of shape (bptt*bs,) with cached data as NDArray
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    length = max(0, min(bptt, len(batches) - i - 1))
+    end = i + length
+    inputs = batches[i:end]
+    targets = batches[i + 1:end + 1].reshape(-1)
+    return (
+        Tensor(inputs, device=device, dtype=dtype, requires_grad=False),
+        Tensor(targets, device=device, dtype=dtype, requires_grad=False),
+    )
     ### END YOUR SOLUTION

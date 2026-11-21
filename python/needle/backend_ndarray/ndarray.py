@@ -44,7 +44,10 @@ class BackendDevice:
         return NDArray(np.random.rand(*shape).astype(dtype), device=self)
 
     def one_hot(self, n: int, i: int, dtype: str = "float32") -> "NDArray":
-        return NDArray(np.eye(n, dtype=dtype)[i], device=self)
+        indices = np.asarray(i)
+        encoded = np.zeros(indices.shape + (n,), dtype=dtype)
+        np.put_along_axis(encoded, indices[..., None], 1, axis=-1)
+        return NDArray(encoded, device=self)
 
     def empty(self, shape: tuple[int, ...], dtype: str = "float32") -> "NDArray":
         dtype = "float32" if dtype is None else dtype
