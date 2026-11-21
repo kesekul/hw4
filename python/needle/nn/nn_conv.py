@@ -1,10 +1,10 @@
 """The module.
 """
-from typing import List, Callable, Any
+import math
+
 from needle.autograd import Tensor
 from needle import ops
 import needle.init as init
-import numpy as np
 from .nn_basic import Parameter, Module
 
 
@@ -28,10 +28,28 @@ class Conv(Module):
         self.stride = stride
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        kernel_area = self.kernel_size ** 2
+        fan_in = in_channels * kernel_area
+        fan_out = out_channels * kernel_area
+        self.weight = Parameter(init.kaiming_uniform(
+            fan_in, fan_out,
+            shape=(self.kernel_size, self.kernel_size, in_channels, out_channels),
+            device=device, dtype=dtype,
+        ))
+        self.bias = None
+        if bias:
+            bound = 1.0 / math.sqrt(fan_in)
+            self.bias = Parameter(init.rand(
+                out_channels, low=-bound, high=bound, device=device, dtype=dtype,
+            ))
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        x = x.transpose((1, 2)).transpose((2, 3))
+        output = ops.conv(x, self.weight, stride=self.stride, padding=self.kernel_size // 2)
+        if self.bias is not None:
+            bias = self.bias.reshape((1, 1, 1, self.out_channels))
+            output = output + bias.broadcast_to(output.shape)
+        return output.transpose((2, 3)).transpose((1, 2))
         ### END YOUR SOLUTION

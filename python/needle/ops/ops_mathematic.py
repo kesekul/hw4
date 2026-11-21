@@ -520,7 +520,8 @@ class Dilate(TensorOp):
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        axes = tuple(range(a.ndim)[axis] for axis in self.axes)
+        # HW4 treats axes outside the input rank as no-ops.
+        axes = {axis % a.ndim for axis in self.axes if -a.ndim <= axis < a.ndim}
         step = self.dilation + 1
         if step < 1:
             raise ValueError("dilation must be nonnegative")
@@ -557,10 +558,12 @@ class UnDilate(TensorOp):
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        axes = tuple(range(a.ndim)[axis] for axis in self.axes)
+        axes = {axis % a.ndim for axis in self.axes if -a.ndim <= axis < a.ndim}
         step = self.dilation + 1
         if step < 1:
             raise ValueError("dilation must be nonnegative")
+        if step == 1 or not axes:
+            return a
         selection = tuple(slice(None, None, step if axis in axes else 1)
                           for axis in range(a.ndim))
         return a[selection]
